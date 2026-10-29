@@ -1,278 +1,187 @@
+# 1. Core Trade-offs & Antipatterns
 
-# 1. Databases & Data Systems
+## Foundational Trade-offs
+* Performance vs Scalability
+* Latency vs Throughput
+* Availability vs Consistency (CAP Theorem)
+* Availability Availability in Numbers: 99.9% (three 9s) vs. 99.99% (four 9s)
+* PACELC Theorem (Latency vs. Consistency during normal operation)
 
-## Data Models & Paradigms
+## Performance Antipatterns
+* Noisy Neighbor (Shared resource monopolization)
+* Retry Storm (Overwhelming a recovering service)
+* Synchronous I/O & Chatty I/O (Too many small network calls)
+* Extraneous Fetching (Over-fetching data)
+* Monolithic Persistence & Busy Database
+
+---
+
+# 2. Databases & Data Management
+
+## Data Models
 * Relational (MySQL, PostgreSQL)
-* Key-Value (Redis, DynamoDB)
-* Document (MongoDB, CouchDB)
-* Wide-Column (Cassandra, HBase)
-* Graph (Neo4j)
-* Time-Series (InfluxDB, Prometheus)
-* Vector (Pinecone, Milvus)
+* NoSQL: Key-Value (Redis), Document (MongoDB), Wide-Column (Cassandra), Graph (Neo4j)
+* Specialized: Time-Series (InfluxDB), Vector (Pinecone)
 
-## Scaling & Partitioning (Sharding)
-* Vertical (Scale Up) vs. Horizontal (Scale Out)
-* Hash-Based vs. Range-Based vs. Directory-Based
-* Consistent Hashing
+## Scaling & Architecture
+* Sharding (Horizontal): Hash, Range, Directory-Based
+* Routing: Consistent Hashing (Minimizes data movement)
+* Federation (Functional partitioning)
+* Denormalization & SQL Tuning (Read optimization)
 
 ## Replication & Consistency
-* Single-Leader vs. Multi-Leader vs. Leaderless
-* Synchronous vs. Asynchronous
-* Replication Lag
-* Linearizability (Strong Consistency)
-* Eventual Consistency
+* Topologies: Single-Leader (Master-Slave), Multi-Leader (Master-Master), Leaderless
+* Fail-over: Active-Active vs. Active-Passive
+* Consistency: Weak, Eventual, Strong (Linearizability)
+* Quorum Consensus (W + R > N)
 
-## Storage Internals & Indexing
-* B-Trees / B+ Trees
-* LSM-Trees & SSTables
-* Write-Ahead Log (WAL)
-* Inverted Indexes
-* Bloom Filters
-
-## Concurrency Control
-* Optimistic vs. Pessimistic Locking
-* MVCC (Multi-Version Concurrency Control)
-* Isolation Levels (Read Uncommitted to Serializable)
+## Internals & Concurrency
+* Indexing: B-Trees, LSM-Trees (WAL, SSTables), Inverted Indexes, Bloom Filters
+* Concurrency: Pessimistic vs. Optimistic Locking, MVCC
 
 ---
 
-# 2. Cache
+# 3. Caching Strategies
 
-## Layers
-* Client / Edge (CDN) / API Gateway / Application / Database
+## Topologies & Layers
+* Layers: Client, CDN, Web Server, Application, Database
+* Setup: Local (In-Memory) vs. Distributed (Redis)
 
-## Topologies
-* Local (In-Memory)
-* Distributed (Redis, Memcached)
-
-## Strategies & Eviction
-* Write-Through, Write-Around, Write-Back
-* LRU, LFU, FIFO
+## Update & Eviction Policies
+* Writing: Write-Through, Write-Around, Write-Back
+* Reading/Updating: Cache Aside, Refresh Ahead
+* Eviction: LRU, LFU, TTL Expiration
 
 ## Common Failures
-* Cache Penetration
-* Cache Stampede / Thundering Herd
-* Cache Avalanche
+* Cache Penetration (Mitigation: Bloom Filters)
+* Cache Stampede / Thundering Herd (Mitigation: Distributed Locks, Jitter)
+* Cache Avalanche (Mitigation: Randomized TTLs)
 
 ---
 
-# 3. CDN (Content Delivery Network)
+# 4. Networking, Load Balancing & Content Delivery
 
-## Core Concepts
-* Push CDN vs. Pull CDN
-* Edge Servers / Points of Presence (PoPs)
-* Anycast IP Routing
-* Geo-DNS
+## Load Balancers & Routing
+* Types: Layer 4 (TCP/UDP) vs. Layer 7 (HTTP/HTTPS)
+* Algorithms: Round Robin, Least Connections, IP Hash
+* Network: TCP vs. UDP, Domain Name System (DNS)
 
----
+## CDNs & Edge
+* Models: Push CDN vs. Pull CDN
+* Routing: Anycast IP, Geo-DNS routing
 
-# 4. Load Balancers
-
-## Types / OSI Layers
-* Layer 4 (Transport: TCP/UDP)
-* Layer 7 (Application: HTTP/HTTPS)
-
-## Routing Algorithms
-* Round Robin / Weighted Round Robin
-* Least Connections / Least Response Time
-* IP Hash (Consistent Hashing)
+## Rate Limiting (Traffic Control)
+* Algorithms: Token Bucket, Leaky Bucket, Fixed/Sliding Window
+* Throttling & Geodes (Geographical distribution)
 
 ---
 
-# 5. Rate Limiters
+# 5. API & Communication Architecture
 
-## Algorithms
-* Token Bucket
-* Leaky Bucket
-* Fixed Window Counter
-* Sliding Window Log
-* Sliding Window Counter
+## API Paradigms
+* REST (Stateless, HTTP methods, HATEOAS)
+* GraphQL (Solves over/under-fetching)
+* RPC / gRPC (Binary, fast, strict contracts)
+* Webhooks, WebSockets, SSE, Long Polling
 
----
+## API-Led Connectivity (Integration Pattern)
+* Experience Layer (BFF): Tailors data for specific client channels.
+* Process Layer: Orchestration, routing, and aggregation.
+* System Layer: Wraps and abstracts core backend databases.
 
-# 6. API & Communication Protocols
-
-## RESTful Architecture 
-* 6 Constraints: Client-Server, Stateless, Cacheable, Uniform Interface, Layered System, Code on Demand
-* Richardson Maturity Model (Levels 0-3)
-* HATEOAS (Hypermedia as the Engine of Application State)
-* Idempotency (Safe vs. Unsafe Methods)
-
-## API-Led / Layered Connectivity (Integration Pattern)
-* Experience Layer (BFF): Tailors data for specific client channels (Web, Mobile, IoT)
-* Process Layer: Handles business logic, orchestration, and aggregation
-* System Layer: Wraps and abstracts core backend systems of record
-
-## Other API Paradigms
-* GraphQL (Over-fetching / Under-fetching solutions)
-* gRPC / RPC
-* Webhooks (Reverse APIs)
-
-## Network & Web Protocols
-* TCP vs. UDP
-* HTTP/1.1 vs. HTTP/2 (Multiplexing) vs. HTTP/3 (QUIC)
-* WebSockets (Bi-directional)
-* Server-Sent Events (SSE - Uni-directional)
-* Long Polling
-
-## Data Serialization / Encoding
-* Text: JSON, XML, CSV
-* Binary: Protocol Buffers (Protobuf), Apache Avro, Thrift
+## Gateway Patterns
+* API Gateway (Centralized auth, rate limiting)
+* Gateway Routing, Gateway Offloading, Gateway Aggregation
 
 ---
 
-# 7. Microservices Architecture & Patterns
+# 6. Microservices & Cloud Design Patterns
 
-## Decomposition & Migration
-* Strangler Fig Pattern (Monolith to Microservices)
+## Decomposition & Structure
+* Strangler Fig (Monolith to Microservices)
 * Domain-Driven Design (Bounded Contexts)
+* Sidecar & Ambassador (Helper services for network/logging)
+* Anti-Corruption Layer (Isolates new systems from legacy)
 
-## Integration & Routing
-* API Gateway Pattern
-* Sidecar Pattern
-* Service Mesh (e.g., Istio, Linkerd)
-* Scatter-Gather (Parallel downstream calls aggregated into a single response)
-* Message Filtering (Conditional routing based on payload content)
+## Data & State
+* CQRS & Event Sourcing
+* Saga Pattern (Choreography vs. Orchestration)
+* Materialized View & Index Table
 
-## Data & State Management
-* CQRS (Command Query Responsibility Segregation)
-* Event Sourcing
-* Saga Pattern (Distributed Transactions)
-  * Choreography (Event-based)
-  * Orchestration (Central Controller)
-* Two-Phase Commit (2PC)
-* Watermarking (Tracking last-processed timestamps for delta syncs/state management)
+---
+
+# 7. Asynchronous Messaging & Event Processing
+
+## Event & Message Brokers
+* Paradigms: Message Queues (Point-to-Point) vs. Event-Driven Pub/Sub
+* Triggers: Event-Driven vs. Schedule Driven Background Jobs
+* Delivery: At-Most-Once, At-Least-Once, Exactly-Once (Idempotency)
+
+## Messaging Patterns
+* Claim Check (Payload to DB, reference ID to queue)
+* Queue-based Load Leveling (Smoothing traffic spikes)
+* Priority Queue & Competing Consumers
+* Pipes and Filters (Breaking down complex processing)
+* Dead Letter Queues (DLQ) & Back Pressure
+
+---
+
+# 8. Distributed System Theory & Coordination
+
+## Coordination
+* Service Discovery & Distributed Locks
+* Leader Election (Paxos, Raft)
+
+## Clocks & Failures
+* Time: Logical Clocks, Vector Clocks, Lamport Timestamps
+* Failures: Split-Brain, Byzantine Fault Tolerance (BFT)
+
+---
+
+# 9. Resiliency, Security & Identity
 
 ## Resiliency Patterns
-* Circuit Breaker
-* Bulkhead Pattern
-* Retry with Exponential Backoff
-* Jitter
-
----
-
-# 8. Asynchronous & Data Processing
-
-## Message Brokers & Event Streams
-* Point-to-Point (RabbitMQ, ActiveMQ)
-* Pub/Sub (Apache Kafka, AWS SNS)
-* Dead Letter Queues (DLQ) (Isolation for poisoned/failed messages)
-* Delivery Semantics: At-Most-Once, At-Least-Once, Exactly-Once
-* Idempotency Keys (Caching unique request IDs to prevent duplicate processing on retries)
-
-## Big Data Processing
-* Batch Processing (MapReduce, Hadoop)
-* Stream Processing (Apache Flink, Spark Streaming)
-
----
-
-# 9. Distributed System Theory & Coordination
-
-## Coordination Services
-* Service Discovery (Consul, Eureka, Zookeeper)
-* Distributed Locks
-* Leader Election (Paxos, Raft Algorithms)
-
-## Clocks & Ordering
-* Physical vs. Logical Clocks
-* Vector Clocks
-* Lamport Timestamps
-
-## Failure Modes & Theorems
-* CAP Theorem (CP vs. AP)
-* PACELC Theorem
-* Byzantine Fault Tolerance (BFT)
-* Split-Brain Problem
-
----
-
-# 10. Monitoring, Observability, and Proxies
-
-## Observability Pillars
-* Metrics (Prometheus, Grafana)
-* Logging (ELK / EFK Stack, Splunk)
-* Distributed Tracing (Jaeger, Zipkin, OpenTelemetry)
-
-## Proxies
-* Forward Proxy (Client masking/filtering)
-* Reverse Proxy (Server masking, SSL termination, Load balancing - e.g., Nginx, HAProxy)
-
----
-
-# 11. Security
+* Circuit Breaker & Bulkhead
+* Retry with Exponential Backoff & Jitter
+* Compensating Transaction (Undoing failed Saga steps)
 
 ## Identity & Access
-* Authentication (AuthN) vs. Authorization (AuthZ)
-* OAuth 2.0 / OpenID Connect (OIDC)
-* SAML
-* JWT (JSON Web Tokens)
+* AuthN (Identity) vs. AuthZ (Permissions)
+* Standards: OAuth 2.0, SAML, JWT
+* Federated Identity
 
-## Data Protection
-* Encryption In-Transit (TLS/SSL)
-* Encryption At-Rest (AES)
-* Web Application Firewall (WAF)
-* CORS (Cross-Origin Resource Sharing)
+## Security Patterns & Edge Defense
+* Gatekeeper (Validates/sanitizes requests) & Valet Key (Limited resource token)
+* CORS, TLS/SSL, WAF (Web Application Firewall)
 
 ---
 
-# 12. Classic Interview System Archetypes
+# 10. Observability & Monitoring
 
-## Global Systems
-* Unique ID Generator (Twitter Snowflake)
-* URL Shortener (TinyURL - Base62 encoding)
-* Web Crawler (BFS, Politeness policy, URL Frontier)
+## Monitoring Types
+* Health Endpoint Monitoring
+* Availability, Performance, Security, & Usage Monitoring
 
-## Social & Content
-* News Feed System (Fan-out on write vs. Fan-out on read)
-* Chat System (WebSockets, Presence servers)
-* Notification System (APNS, FCM, Rate limiting)
+## Telemetry Pillars
+* Metrics (Counters/Gauges), Logging (Events), Distributed Tracing
+* Tools: Instrumentation, Visualization, & Alerts
 
-## Spatial & Location
-* Proximity Service (Yelp/Tinder - Geohashes, Quadtrees)
-* Ride-Sharing (Uber - Dispatch systems, location tracking)
+---
 
-## Infrastructure
-* Distributed Cache (Consistent hashing)
-* Rate Limiter (Rules caching, Redis Lua scripts)
-* Distributed Message Queue
+# 11. Classic System Archetypes
 
-Adding AWS concepts is highly beneficial because interviews often expect you to map abstract architectural components to concrete, industry-standard cloud services. Here is the structured section to append to your cheat sheet.
+* Global: Unique ID Generator (Snowflake), URL Shortener
+* Content/Social: News Feed (Fan-out), Web Crawler
+* Real-Time: Chat System, Notification System
+* Spatial: Proximity Service (Geohashes/Quadtrees), Ride-Sharing
 
-# 13. Cloud Infrastructure (AWS Mapping)
+---
 
-## Compute & Execution
-* Virtual Machines: Amazon EC2 (Elastic Compute Cloud)
-* Container Orchestration: Amazon EKS (Managed Kubernetes), Amazon ECS
-* Serverless Compute: AWS Lambda (Event-driven execution, cold starts)
+# 12. Cloud Infrastructure (AWS Mapping)
 
-## Storage
-* Object / Blob Storage: Amazon S3 (Unstructured data, backups, static media)
-* Block Storage: Amazon EBS (Elastic Block Store - attached directly to VMs)
-* File Storage: Amazon EFS (Elastic File System - shared across multiple VMs)
-
-## Databases & Caching
-* Relational (SQL): Amazon RDS, Amazon Aurora (Highly scalable, cloud-native MySQL/PostgreSQL)
-* Key-Value / Document (NoSQL): Amazon DynamoDB (Single-digit millisecond latency)
-* Distributed Cache: Amazon ElastiCache (Managed Redis / Memcached)
-* Graph: Amazon Neptune
-* Data Warehouse (OLAP): Amazon Redshift
-
-## Networking & Edge
-* Load Balancing: Elastic Load Balancing (ALB for Layer 7 HTTP/HTTPS, NLB for Layer 4 TCP/UDP)
-* Content Delivery Network (CDN): Amazon CloudFront
-* Domain Name System (DNS): Amazon Route 53 (Supports Geo-DNS, Latency-based, and Weighted routing)
-* API Management: Amazon API Gateway (Rate limiting, auth, throttling)
-* Virtual Network: Amazon VPC (Virtual Private Cloud, Subnets, Peering, Transit Gateway)
-
-## Integration, Messaging & Streaming
-* Message Queues: Amazon SQS (Point-to-point, Standard vs. FIFO queues, DLQ integration)
-* Pub/Sub: Amazon SNS (Fan-out, push-based notifications)
-* Event Routing: Amazon EventBridge (Serverless event bus)
-* Data Streams: Amazon Kinesis (Real-time stream processing, alternative to Kafka)
-
-## Security & Observability
-* Identity & Access: AWS IAM (Internal service/role access), Amazon Cognito (External user authentication)
-* Encryption: AWS KMS (Key Management Service for at-rest encryption)
-* Edge Protection: AWS WAF (Web Application Firewall), AWS Shield (DDoS protection)
-* Monitoring & Logging: Amazon CloudWatch (Metrics, Alarms, Logs)
-* Distributed Tracing: AWS X-Ray (Visualizing service-to-service requests)
+* Compute: EC2 (VMs), EKS/ECS (Containers), Lambda (Serverless)
+* Storage: S3 (Object), EBS (Block), EFS (File)
+* Databases: RDS/Aurora (SQL), DynamoDB (NoSQL), Redshift (OLAP)
+* Caching: ElastiCache (Redis/Memcached)
+* Network & CDN: ALB/NLB (Load Balancing), CloudFront (CDN), Route 53 (DNS)
+* Async/Messaging: SQS (Queues), SNS (Pub/Sub), Kinesis (Streams)
